@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Heterocyclic">
+<meta name="theme-color" content="#0f1117">
+<title>Heterocyclic Ring Systems</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --s1: #1a1d27;
+    --s2: #242736;
+    --bd: #2e3248;
+    --ac: #34d399;
+    --ac2: #6ee7b7;
+    --tx: #e8eaf6;
+    --tx2: #8b92b8;
+    --gr: #4ade80;
+    --rd: #f87171;
+    --yw: #fbbf24;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html, body {
+    height:100%; overflow:hidden;
+    font-family: -apple-system, 'SF Pro Display', 'Segoe UI', sans-serif;
+    background:var(--bg); color:var(--tx);
+  }
+  
+  /* Layout */
+  .app { display:flex; flex-direction:column; height:100%; height:100dvh; }
+  
+  /* Topbar */
+  .top {
+    background:var(--s1);
+    border-bottom:1px solid var(--bd);
+    padding: env(safe-area-inset-top, 0) 14px 0;
+    flex-shrink:0;
+  }
+  .top-inner {
+    display:flex; align-items:center; gap:10px;
+    padding: 10px 0;
+    flex-wrap: wrap;
+  }
+  .app-title { font-size:14px; font-weight:800; color:var(--ac); white-space:nowrap; flex-shrink:0; }
+  .app-sub { font-size:10px; color:var(--tx2); display:block; }
+  .top select {
+    background:var(--s2); border:1px solid var(--bd);
+    color:var(--tx); padding:5px 8px; border-radius:8px;
+    font-size:11px; flex:1; min-width:120px; cursor:pointer;
+    -webkit-appearance:none; appearance:none;
+  }
+  .top-right { display:flex; align-items:center; gap:8px; margin-left:auto; flex-shrink:0; }
+  .stat { font-size:11px; color:var(--tx2); white-space:nowrap; }
+  .stat b { color:var(--tx); }
+  .btn-shuffle {
+    background:transparent; border:1px solid var(--bd);
+    color:var(--ac); border-radius:8px; padding:5px 10px;
+    font-size:11px; font-weight:600; cursor:pointer;
+  }
+
+  /* Progress */
+  .prog { height:2px; background:var(--s2); flex-shrink:0; }
+  .prog-fill { height:100%; background:linear-gradient(90deg,var(--ac),var(--ac2)); transition:width .3s; }
+
+  /* Main content */
+  .content {
+    flex:1; display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    padding:16px 12px 8px; gap:14px; overflow:hidden;
+  }
+
+  /* Card */
+  .scene {
+    perspective:1000px;
+    width:100%; max-width:600px;
+    flex:1; max-height:420px;
+    cursor:pointer;
+  }
+  .card {
+    width:100%; height:100%;
+    position:relative; transform-style:preserve-3d;
+    transition:transform .5s cubic-bezier(.4,0,.2,1);
+  }
+  .card.flipped { transform:rotateY(180deg); }
+  .face {
+    position:absolute; inset:0;
+    backface-visibility:hidden; -webkit-backface-visibility:hidden;
+    border-radius:18px; border:1px solid var(--bd);
+    overflow:hidden;
+  }
+
+  /* Front */
+  .front {
+    background:var(--s1);
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    padding:20px; gap:10px;
+    box-shadow:0 6px 28px rgba(0,0,0,.5);
+  }
+  .front-meta {
+    position:absolute; top:12px; left:0; right:0;
+    display:flex; justify-content:space-between; padding:0 14px;
+    font-size:10px; color:var(--tx2);
+  }
+  .cat-pill {
+    background:rgba(108,142,245,.12); border:1px solid rgba(108,142,245,.2);
+    border-radius:20px; padding:2px 9px;
+    color:var(--ac); font-size:9px; font-weight:700;
+    letter-spacing:.4px; text-transform:uppercase;
+    max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .drug-name {
+    font-size:clamp(16px,4vw,26px); font-weight:800;
+    text-align:center; line-height:1.35; color:var(--tx);
+    max-width:90%;
+  }
+  .front-icon { font-size:28px; opacity:.35; }
+  .tap-hint { position:absolute; bottom:12px; font-size:10px; color:var(--tx2); }
+
+  /* Back */
+  .back {
+    background:var(--s2); transform:rotateY(180deg);
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    padding:16px; gap:10px;
+    box-shadow:0 6px 28px rgba(0,0,0,.5);
+  }
+  .back img {
+    max-width:88%; max-height:55%; object-fit:contain;
+    filter:invert(1) hue-rotate(180deg); border-radius:4px;
+  }
+  .back .loading-struct {
+    width:80px; height:80px; border-radius:50%;
+    border:3px solid var(--bd); border-top-color:var(--ac);
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .back-name { font-size:14px; font-weight:700; color:var(--tx); text-align:center; }
+  .back-cat {
+    font-size:11px; color:var(--ac2); text-align:center;
+    background:rgba(167,139,250,.1); border:1px solid rgba(167,139,250,.2);
+    border-radius:20px; padding:3px 12px;
+  }
+  .back-hint { position:absolute; bottom:12px; font-size:10px; color:var(--tx2); }
+
+  /* Buttons */
+  .btns {
+    display:flex; gap:10px; align-items:center;
+    width:100%; max-width:420px;
+  }
+  .btn {
+    flex:1; padding:13px 8px; border-radius:14px; border:none;
+    font-size:14px; font-weight:700; cursor:pointer;
+    transition:all .15s; display:flex; align-items:center;
+    justify-content:center; gap:5px;
+  }
+  .btn:active { transform:scale(.94); }
+  .btn-no { background:var(--rd); color:#fff; }
+  .btn-yes { background:var(--gr); color:#0a1a0a; }
+  .btn-flip {
+    flex:0 0 auto; width:52px; height:52px; border-radius:14px;
+    background:var(--s2); color:var(--tx); border:1.5px solid var(--bd);
+    font-size:18px;
+  }
+
+  /* Nav */
+  .nav {
+    display:flex; gap:8px;
+    padding-bottom: env(safe-area-inset-bottom, 8px);
+  }
+  .btn-nav {
+    background:transparent; border:1px solid var(--bd);
+    color:var(--tx2); border-radius:10px;
+    padding:7px 18px; font-size:12px; cursor:pointer;
+  }
+  .btn-nav:active { background:var(--s2); }
+
+  /* Result */
+  .result {
+    display:none; flex-direction:column;
+    align-items:center; gap:18px; text-align:center;
+    background:var(--s1); border:1px solid var(--bd);
+    border-radius:22px; padding:36px 32px;
+    width:100%; max-width:380px;
+  }
+  .result.show { display:flex; }
+  .result h2 { font-size:22px; }
+  .ring {
+    width:88px; height:88px; border-radius:50%;
+    border:5px solid var(--bd);
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; font-weight:900;
+  }
+  .res-row { display:flex; gap:28px; }
+  .res-col { display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .res-col .n { font-size:26px; font-weight:900; }
+  .res-col .l { font-size:10px; color:var(--tx2); }
+  .res-btns { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+  .btn-res {
+    padding:10px 20px; border-radius:12px; border:none;
+    font-size:13px; font-weight:700; cursor:pointer;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="top-inner">
+      <div>
+        <div class="app-title">🔬 Heterocyclic Ring Systems</div>
+        <span class="app-sub">杂环系统结构式 · Name → Structure</span>
+      </div>
+      
+      <div class="top-right">
+        <div class="stat"><b id="stP">0/0</b> &nbsp;✓<b id="stK" style="color:var(--gr)">0</b> ✗<b id="stD" style="color:var(--rd)">0</b></div>
+        <button class="btn-shuffle" onclick="shuffle()">🔀</button>
+      </div>
+    </div>
+  </div>
+  <div class="prog"><div class="prog-fill" id="pf" style="width:0%"></div></div>
+
+  <div class="content" id="content">
+    <div class="scene" onclick="flip()">
+      <div class="card" id="card">
+        <div class="face front">
+          <div class="front-meta">
+            <span class="cat-pill" id="fCat"></span>
+            <span id="fNum">1/?</span>
+          </div>
+          <div class="front-icon">🔬</div>
+          <div class="drug-name" id="fName">Loading...</div>
+          <div class="tap-hint">点击查看结构式 →</div>
+        </div>
+        <div class="face back">
+          <div class="loading-struct" id="loadSpin"></div>
+          <img id="bImg" src="" alt="" style="display:none">
+          <div class="back-name" id="bName"></div>
+          
+          <div class="back-hint">← 点击返回</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btns">
+      <button class="btn btn-no" onclick="rate(false)">✗ 还不会</button>
+      <button class="btn btn-flip" onclick="flip()">↕</button>
+      <button class="btn btn-yes" onclick="rate(true)">✓ 已掌握</button>
+    </div>
+    <div class="nav">
+      <button class="btn-nav" onclick="go(-1)">← 上一个</button>
+      <button class="btn-nav" onclick="go(1)">下一个 →</button>
+    </div>
+
+    <div class="result" id="result">
+      <div style="font-size:40px">🎉</div>
+      <h2>本轮完成！</h2>
+      <div class="ring" id="rRing"><span id="rPct">0%</span></div>
+      <div class="res-row">
+        <div class="res-col"><div class="n" style="color:var(--gr)" id="rK">0</div><div class="l">已掌握</div></div>
+        <div class="res-col"><div class="n" style="color:var(--rd)" id="rD">0</div><div class="l">需复习</div></div>
+        <div class="res-col"><div class="n" id="rT">0</div><div class="l">总计</div></div>
+      </div>
+      <div class="res-btns">
+        <button class="btn-res" style="background:var(--s2);color:var(--tx);border:1px solid var(--bd)" onclick="restart(false)">🔄 再来一遍</button>
+        <button class="btn-res" style="background:var(--rd);color:#fff" onclick="restart(true)">📌 只练错题</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// === Inline metadata ===
+window.DRUGS = [{"id": 0, "name": "oxirane", "image": "image283.png"}, {"id": 1, "name": "Azetidine", "image": "image284.png"}, {"id": 2, "name": "2-azetidinone", "image": "image285.png"}, {"id": 3, "name": "Furan", "image": "image286.png"}, {"id": 4, "name": "tetrahydrofuran", "image": "image287.png"}, {"id": 5, "name": "thiophene", "image": "image288.png"}, {"id": 6, "name": "pyrrole", "image": "image289.png"}, {"id": 7, "name": "pyrrolidine", "image": "image290.png"}, {"id": 8, "name": "oxazole", "image": "image291.png"}, {"id": 9, "name": "oxazolidine", "image": "image292.png"}, {"id": 10, "name": "isoxazole", "image": "image293.png"}, {"id": 11, "name": "isoxazolidine", "image": "image294.png"}, {"id": 12, "name": "thiazole", "image": "image295.png"}, {"id": 13, "name": "thiazolidine", "image": "image296.png"}, {"id": 14, "name": "isothiazole", "image": "image297.png"}, {"id": 15, "name": "isothiazolidine", "image": "image298.png"}, {"id": 16, "name": "pyrazole", "image": "image299.png"}, {"id": 17, "name": "pyrazolidine", "image": "image300.png"}, {"id": 18, "name": "imidazole", "image": "image301.png"}, {"id": 19, "name": "imidazolidine", "image": "image302.png"}, {"id": 20, "name": "1H-1,2,3-triazole", "image": "image303.png"}, {"id": 21, "name": "1,3,4-oxadiazole", "image": "image304.png"}, {"id": 22, "name": "1,3,4-thiadiazole", "image": "image305.png"}, {"id": 23, "name": "1H-tetrazole", "image": "image306.png"}, {"id": 24, "name": "2H-pyran", "image": "image307.png"}, {"id": 25, "name": "4H-pyran", "image": "image308.png"}, {"id": 26, "name": "Tetrahydropyran", "image": "image309.png"}, {"id": 27, "name": "1,4-dioxane", "image": "image310.png"}, {"id": 28, "name": "pyridine", "image": "image311.png"}, {"id": 29, "name": "piperidine", "image": "image312.png"}, {"id": 30, "name": "pyridazine", "image": "image313.png"}, {"id": 31, "name": "pyrimidine", "image": "image314.png"}, {"id": 32, "name": "pyrazine", "image": "image315.png"}, {"id": 33, "name": "piperazine", "image": "image316.png"}, {"id": 34, "name": "2H-1,2-oxazine", "image": "image317.png"}, {"id": 35, "name": "Morpholine", "image": "image318.png"}, {"id": 36, "name": "2H-1,4-thiazine", "image": "image319.png"}, {"id": 37, "name": "1,3,5-triazine", "image": "image320.png"}, {"id": 38, "name": "1H-azepine", "image": "image321.png"}, {"id": 39, "name": "azepane", "image": "image322.png"}, {"id": 40, "name": "azocine", "image": "image323.png"}, {"id": 41, "name": "1H-1,2-diazepine", "image": "image324.png"}, {"id": 42, "name": "1H-1,3-diazepine", "image": "image325.png"}, {"id": 43, "name": "1H-1,4-diazepine", "image": "image326.png"}, {"id": 44, "name": "benzofuran", "image": "image327.png"}, {"id": 45, "name": "indole", "image": "image328.png"}, {"id": 46, "name": "indoline", "image": "image329.png"}, {"id": 47, "name": "isoindole", "image": "image330.png"}, {"id": 48, "name": "indolizine", "image": "image331.png"}, {"id": 49, "name": "indolizidine", "image": "image332.png"}, {"id": 50, "name": "1H-indazole", "image": "image333.png"}, {"id": 51, "name": "benzimidazole", "image": "image334.png"}, {"id": 52, "name": "quinoline", "image": "image335.png"}, {"id": 53, "name": "isoquinoline", "image": "image336.png"}, {"id": 54, "name": "2H-chromene", "image": "image337.png"}, {"id": 55, "name": "1H-isochromene", "image": "image338.png"}, {"id": 56, "name": "Chromane", "image": "image339.png"}, {"id": 57, "name": "2H-quinolizine", "image": "image340.png"}, {"id": 58, "name": "quinolizidine", "image": "image341.png"}, {"id": 59, "name": "quinazoline", "image": "image342.png"}, {"id": 60, "name": "quinoxaline", "image": "image343.png"}, {"id": 61, "name": "phthalazine", "image": "image344.png"}, {"id": 62, "name": "1,8-naphthyridine", "image": "image345.png"}, {"id": 63, "name": "7H-purine", "image": "image346.png"}, {"id": 64, "name": "Pteridine", "image": "image347.png"}, {"id": 65, "name": "1H-1,4-benzodiazepine", "image": "image348.png"}, {"id": 66, "name": "1H-2,3-benzodiazepine", "image": "image349.png"}, {"id": 67, "name": "1H-1,5-benzodiazepine", "image": "image350.png"}, {"id": 68, "name": "1H-1,5-benzothiazepine", "image": "image351.png"}, {"id": 69, "name": "Clavam", "image": "image352.png"}, {"id": 70, "name": "penam", "image": "image353.png"}, {"id": 71, "name": "cefam", "image": "image354.png"}, {"id": 72, "name": "xanthene", "image": "image355.png"}, {"id": 73, "name": "acridine", "image": "image356.png"}, {"id": 74, "name": "phenazine", "image": "image357.png"}, {"id": 75, "name": "phenothiazine", "image": "image358.png"}, {"id": 76, "name": "5H-dibenzo\\b,f\\azepine", "image": "image359.png"}, {"id": 77, "name": "β-carboline", "image": "image360.png"}];
+window.CHUNK_MAP = {"image283.png": 0, "image284.png": 0, "image285.png": 0, "image286.png": 0, "image287.png": 0, "image288.png": 0, "image289.png": 0, "image290.png": 0, "image291.png": 0, "image292.png": 0, "image293.png": 0, "image294.png": 0, "image295.png": 0, "image296.png": 0, "image297.png": 0, "image298.png": 0, "image299.png": 0, "image300.png": 0, "image301.png": 0, "image302.png": 0, "image303.png": 1, "image304.png": 1, "image305.png": 1, "image306.png": 1, "image307.png": 1, "image308.png": 1, "image309.png": 1, "image310.png": 1, "image311.png": 1, "image312.png": 1, "image313.png": 1, "image314.png": 1, "image315.png": 1, "image316.png": 1, "image317.png": 1, "image318.png": 1, "image319.png": 1, "image320.png": 1, "image321.png": 1, "image322.png": 1, "image323.png": 2, "image324.png": 2, "image325.png": 2, "image326.png": 2, "image327.png": 2, "image328.png": 2, "image329.png": 2, "image330.png": 2, "image331.png": 2, "image332.png": 2, "image333.png": 2, "image334.png": 2, "image335.png": 2, "image336.png": 2, "image337.png": 2, "image338.png": 2, "image339.png": 2, "image340.png": 2, "image341.png": 2, "image342.png": 2, "image343.png": 3, "image344.png": 3, "image345.png": 3, "image346.png": 3, "image347.png": 3, "image348.png": 3, "image349.png": 3, "image350.png": 3, "image351.png": 3, "image352.png": 3, "image353.png": 3, "image354.png": 3, "image355.png": 3, "image356.png": 3, "image357.png": 3, "image358.png": 3, "image359.png": 3, "image360.png": 3};
+window.CHUNK_FILES = ["chunk_00.js", "chunk_01.js", "chunk_02.js", "chunk_03.js"];
+
+
+// === State ===
+let deck = [...DRUGS];
+let idx = 0, flipped = false;
+let knowSet = new Set(), dunnoSet = new Set();
+let loadedChunks = new Set();
+const HAS_CAT = false;
+
+// === Image loading ===
+function getImg(imgName) {
+  return window.__CHUNKS__ && window.__CHUNKS__[imgName]
+    ? 'data:image/png;base64,' + window.__CHUNKS__[imgName]
+    : null;
+}
+
+function chunkIdxFor(imgName) {
+  return CHUNK_MAP[imgName] ?? 0;
+}
+
+function loadChunk(chunkIdx) {
+  if (loadedChunks.has(chunkIdx)) return Promise.resolve();
+  loadedChunks.add(chunkIdx);
+  return new Promise((res) => {
+    const s = document.createElement('script');
+    s.src = CHUNK_FILES[chunkIdx];
+    s.onload = res;
+    s.onerror = res;
+    document.head.appendChild(s);
+  });
+}
+
+function preloadAdjacent() {
+  const next = deck[idx+1];
+  if (next) loadChunk(chunkIdxFor(next.image));
+}
+
+// === Render ===
+async function render() {
+  document.getElementById('result').classList.remove('show');
+  if (idx >= deck.length) { showResult(); return; }
+
+  const d = deck[idx];
+  flipped = false;
+  document.getElementById('card').classList.remove('flipped');
+
+  document.getElementById('fName').textContent = d.name;
+  document.getElementById('fNum').textContent = (idx+1) + '/' + deck.length;
+  document.getElementById('bName').textContent = d.name;
+  
+  if (HAS_CAT) {
+    document.getElementById('fCat').textContent = d.category;
+    const bc = document.getElementById('backCat');
+    if (bc) bc.textContent = d.category;
+  } else {
+    const fc = document.getElementById('fCat');
+    if (fc) fc.style.display = 'none';
+  }
+
+  // Lazy load image chunk
+  document.getElementById('bImg').style.display = 'none';
+  document.getElementById('loadSpin').style.display = 'block';
+
+  const ci = chunkIdxFor(d.image);
+  await loadChunk(ci);
+  
+  const src = getImg(d.image);
+  if (src) {
+    document.getElementById('bImg').src = src;
+    document.getElementById('bImg').style.display = 'block';
+    document.getElementById('loadSpin').style.display = 'none';
+  }
+
+  updateStats();
+  preloadAdjacent();
+}
+
+function updateStats() {
+  const done = Math.min(idx, deck.length);
+  document.getElementById('stP').textContent = done + '/' + deck.length;
+  document.getElementById('stK').textContent = knowSet.size;
+  document.getElementById('stD').textContent = dunnoSet.size;
+  document.getElementById('pf').style.width = (deck.length > 0 ? done/deck.length*100 : 0) + '%';
+}
+
+// === Controls ===
+function flip() {
+  flipped = !flipped;
+  document.getElementById('card').classList.toggle('flipped', flipped);
+}
+
+function rate(know) {
+  const d = deck[idx];
+  if (know) { knowSet.add(d.id); dunnoSet.delete(d.id); }
+  else { dunnoSet.add(d.id); knowSet.delete(d.id); }
+  idx++;
+  render();
+  updateStats();
+}
+
+function go(dir) {
+  if (dir === -1 && idx > 0) idx--;
+  else if (dir === 1 && idx < deck.length) idx++;
+  render();
+}
+
+function shuffle() {
+  for (let i = deck.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [deck[i],deck[j]] = [deck[j],deck[i]];
+  }
+  idx = 0; render();
+}
+
+function filterCat() {
+  const cat = document.getElementById('catSel')?.value ?? 'all';
+  deck = cat === 'all' ? [...DRUGS] : DRUGS.filter(d => d.category === cat);
+  knowSet.clear(); dunnoSet.clear(); idx = 0; render();
+}
+
+function showResult() {
+  // Hide card UI
+  document.querySelector('.scene').style.display = 'none';
+  document.querySelector('.btns').style.display = 'none';
+  document.querySelector('.nav').style.display = 'none';
+  document.getElementById('result').classList.add('show');
+  
+  const total = deck.length, know = knowSet.size, dunno = dunnoSet.size;
+  const pct = total > 0 ? Math.round(know/total*100) : 0;
+  document.getElementById('rPct').textContent = pct + '%';
+  document.getElementById('rK').textContent = know;
+  document.getElementById('rD').textContent = dunno;
+  document.getElementById('rT').textContent = total;
+  const ring = document.getElementById('rRing');
+  ring.style.borderColor = pct>=80?'var(--gr)':pct>=50?'var(--yw)':'var(--rd)';
+}
+
+function restart(dunnoOnly) {
+  if (dunnoOnly && dunnoSet.size > 0) {
+    const ids = [...dunnoSet];
+    deck = deck.filter(d => ids.includes(d.id));
+  }
+  knowSet.clear(); dunnoSet.clear(); idx = 0;
+  document.querySelector('.scene').style.display = '';
+  document.querySelector('.btns').style.display = '';
+  document.querySelector('.nav').style.display = '';
+  render();
+}
+
+// Touch swipe support
+let tx0 = 0, ty0 = 0;
+document.querySelector('.scene').addEventListener('touchstart', e => {
+  tx0 = e.touches[0].clientX; ty0 = e.touches[0].clientY;
+}, {passive:true});
+document.querySelector('.scene').addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - tx0;
+  const dy = Math.abs(e.changedTouches[0].clientY - ty0);
+  if (Math.abs(dx) > 60 && dy < 40) {
+    if (dx < 0) rate(true);   // swipe left = know
+    else rate(false);          // swipe right = don't know
+  }
+}, {passive:true});
+
+render();
+</script>
+</body>
+</html>
